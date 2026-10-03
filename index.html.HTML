@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MAJU ENXOVAIS - Gestão & Controle de Produção</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Ajustes específicos para Android e telas mobile */
+    html, body {
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+    input, select, textarea {
+      font-size: 16px !important; /* Evita o zoom automático do Android ao focar no campo */
+    }
+    @media print {
+      body * { visibility: hidden; }
+      #area-impressao, #area-impressao * { visibility: visible; }
+      #area-impressao { position: absolute; left: 0; top: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-6">
+
+  <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-50 no-print">
+    <div class="max-w-7xl mx-auto px-3 py-2.5 md:px-4 md:py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2 md:space-x-3">
+        <div class="bg-amber-500 text-slate-950 p-1.5 md:p-2 rounded-lg font-black text-lg md:text-xl">ME</div>
+        <div>
+          <h1 class="font-bold text-sm md:text-lg leading-tight">MAJU ENXOVAIS</h1>
+          <p class="text-[10px] md:text-xs text-amber-400">Gestão de Produção</p>
+        </div>
+      </div>
+      <div class="flex space-x-1 md:space-x-2">
+        <button onclick="mudarAba('apontamento')" id="tab-apontamento" class="px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg text-xs md:text-sm font-semibold bg-amber-500 text-slate-950">Apontar</button>
+        <button onclick="mudarAba('relatorios')" id="tab-relatorios" class="px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg text-xs md:text-sm font-semibold text-slate-300 hover:bg-slate-800">Relatórios</button>
+        <button onclick="mudarAba('cadastros')" id="tab-cadastros" class="px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg text-xs md:text-sm font-semibold text-slate-300 hover:bg-slate-800">Cadastros</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto p-3 md:p-6">
+    <!-- ABA APONTAMENTO -->
+    <div id="sec-apontamento" class="space-y-4 md:space-y-6">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg md:text-xl font-bold text-slate-800 mb-4 flex items-center">
+          <i data-lucide="plus-circle" class="mr-2 text-amber-500"></i> Novo Apontamento de Produção
+        </h2>
+        <form onsubmit="salvarApontamento(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Máquina / Setor</label>
+            <select id="apt-maquina" required class="w-full border rounded-lg p-2.5 text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Operador 1 (Principal)</label>
+            <select id="apt-op1" required class="w-full border rounded-lg p-2.5 text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Operador 2 (Dupla / Opcional)</label>
+            <select id="apt-op2" class="w-full border rounded-lg p-2.5 text-sm"></select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Produto em Produção</label>
+            <input type="text" id="apt-produto" required placeholder="Ex: Jogo de Cama Casal 100% Algodão" class="w-full border rounded-lg p-2.5 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Qtd Produzida (Peças)</label>
+            <input type="number" id="apt-qtd" required min="1" placeholder="0" class="w-full border rounded-lg p-2.5 text-sm font-bold text-indigo-700">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Qtd Refugo/Perdas</label>
+            <input type="number" id="apt-refugo" value="0" min="0" class="w-full border rounded-lg p-2.5 text-sm font-bold text-red-600">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Turno</label>
+            <select id="apt-turno" class="w-full border rounded-lg p-2.5 text-sm">
+              <option value="Manhã">Manhã</option>
+              <option value="Tarde">Tarde</option>
+              <option value="Noite">Noite</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold p-3 md:p-2.5 rounded-lg shadow flex items-center justify-center">
+              <i data-lucide="check" class="w-4 h-4 mr-1"></i> Registrar Produção
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- APONTAMENTOS DO DIA -->
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+        <h3 class="text-base md:text-lg font-bold text-slate-800 mb-3">Apontamentos Realizados Hoje</h3>
+        <div class="overflow-x-auto border rounded-lg">
+          <table class="w-full text-left text-xs md:text-sm">
+            <thead class="bg-slate-50 border-b">
+              <tr>
+                <th class="p-2 md:p-3">Hora</th>
+                <th class="p-2 md:p-3">Máquina</th>
+                <th class="p-2 md:p-3">Equipe / Operadores</th>
+                <th class="p-2 md:p-3">Produto</th>
+                <th class="p-2 md:p-3 text-center">Qtd Ok</th>
+                <th class="p-2 md:p-3 text-center">Refugo</th>
+              </tr>
+            </thead>
+            <tbody id="tb-hoje" class="divide-y"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA RELATÓRIOS -->
+    <div id="sec-relatorios" class="hidden space-y-4 md:space-y-6">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-4 mb-4 md:mb-6">
+          <h2 class="text-lg md:text-xl font-bold text-slate-800 flex items-center">
+            <i data-lucide="bar-chart-3" class="mr-2 text-amber-500"></i> Relatório Consolidado
+          </h2>
+          <div class="flex space-x-2 no-print w-full sm:w-auto">
+            <button onclick="imprimirRelatorio()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm flex items-center justify-center shadow">
+              <i data-lucide="printer" class="w-4 h-4 mr-1 md:mr-2"></i> Imprimir / PDF
+            </button>
+            <button onclick="enviarWhatsApp()" class="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm flex items-center justify-center shadow">
+              <i data-lucide="message-square" class="w-4 h-4 mr-1 md:mr-2"></i> WhatsApp
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4 md:mb-6 no-print">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Filtrar Período</label>
+            <select id="rel-tipo" onchange="filtrarRelatorio()" class="w-full border rounded-lg p-2.5 text-sm font-semibold">
+              <option value="diario">Diário (Hoje)</option>
+              <option value="semanal">Semanal (Últimos 7 dias)</option>
+              <option value="mensal">Mensal (Últimos 30 dias)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ÁREA QUE SERÁ IMPRESSA -->
+        <div id="area-impressao" class="space-y-4 md:space-y-6">
+          <div class="text-center pb-3 border-b">
+            <h1 class="text-xl md:text-2xl font-black text-slate-900">MAJU ENXOVAIS</h1>
+            <p class="text-[10px] md:text-xs text-slate-500 uppercase tracking-widest font-bold">Relatório de Produção & Produtividade</p>
+            <p class="text-xs text-slate-600 mt-1" id="lbl-periodo">Período: Hoje</p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 md:gap-4">
+            <div class="bg-indigo-50 border border-indigo-200 p-2.5 md:p-4 rounded-xl text-center">
+              <p class="text-[10px] md:text-xs text-indigo-600 font-bold uppercase">Produzido</p>
+              <p class="text-xl md:text-3xl font-black text-indigo-900" id="card-total">0</p>
+            </div>
+            <div class="bg-red-50 border border-red-200 p-2.5 md:p-4 rounded-xl text-center">
+              <p class="text-[10px] md:text-xs text-red-600 font-bold uppercase">Refugos</p>
+              <p class="text-xl md:text-3xl font-black text-red-900" id="card-refugo">0</p>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 p-2.5 md:p-4 rounded-xl text-center">
+              <p class="text-[10px] md:text-xs text-emerald-600 font-bold uppercase">Eficiência</p>
+              <p class="text-xl md:text-3xl font-black text-emerald-900" id="card-eficiencia">100%</p>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto border rounded-lg">
+            <table class="w-full text-left text-xs md:text-sm">
+              <thead class="bg-slate-100 border-b">
+                <tr>
+                  <th class="p-2 md:p-3 border-r">Data / Hora</th>
+                  <th class="p-2 md:p-3 border-r">Máquina</th>
+                  <th class="p-2 md:p-3 border-r">Equipe</th>
+                  <th class="p-2 md:p-3 border-r">Produto</th>
+                  <th class="p-2 md:p-3 text-center border-r">Produção</th>
+                  <th class="p-2 md:p-3 text-center">Refugo</th>
+                </tr>
+              </thead>
+              <tbody id="tb-relatorio" class="divide-y"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA CADASTROS -->
+    <div id="sec-cadastros" class="hidden space-y-4 md:space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <!-- Cadastrar Funcionário -->
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="text-base md:text-lg font-bold text-slate-800 mb-3">Cadastrar Funcionário</h3>
+          <form onsubmit="addOperador(event)" class="flex gap-2">
+            <input type="text" id="cad-op-nome" required placeholder="Nome do Funcionário" class="flex-1 border rounded-lg p-2.5 text-sm">
+            <button type="submit" class="bg-slate-800 text-white font-bold px-4 rounded-lg text-sm">Salvar</button>
+          </form>
+          <ul id="lista-operadores" class="mt-4 divide-y text-xs md:text-sm"></ul>
+        </div>
+
+        <!-- Cadastrar Máquina -->
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="text-base md:text-lg font-bold text-slate-800 mb-3">Cadastrar Máquina / Setor</h3>
+          <form onsubmit="addMaquina(event)" class="flex gap-2">
+            <input type="text" id="cad-maq-nome" required placeholder="Ex: Máquina Costura 01" class="flex-1 border rounded-lg p-2.5 text-sm">
+            <button type="submit" class="bg-slate-800 text-white font-bold px-4 rounded-lg text-sm">Salvar</button>
+          </form>
+          <ul id="lista-maquinas" class="mt-4 divide-y text-xs md:text-sm"></ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let operadores = JSON.parse(localStorage.getItem('maju_operadores')) || ["Maria Silva", "João Santos", "Ana Oliveira"];
+    let maquinas = JSON.parse(localStorage.getItem('maju_maquinas')) || ["Costura 01", "Costura 02", "Corte Automático"];
+    let apontamentos = JSON.parse(localStorage.getItem('maju_apontamentos')) || [];
+
+    window.onload = function() {
+      lucide.createIcons();
+      carregarSelects();
+      renderApontamentosHoje();
+      renderCadastros();
+    };
+
+    function mudarAba(aba) {
+      document.getElementById('sec-apontamento').classList.toggle('hidden', aba !== 'apontamento');
+      document.getElementById('sec-relatorios').classList.toggle('hidden', aba !== 'relatorios');
+      document.getElementById('sec-cadastros').classList.toggle('hidden', aba !== 'cadastros');
+      if(aba === 'relatorios') filtrarRelatorio();
+    }
+
+    function carregarSelects() {
+      const selMaq = document.getElementById('apt-maquina');
+      const selOp1 = document.getElementById('apt-op1');
+      const selOp2 = document.getElementById('apt-op2');
+
+      selMaq.innerHTML = maquinas.map(m => `<option value="${m}">${m}</option>`).join('');
+      selOp1.innerHTML = operadores.map(o => `<option value="${o}">${o}</option>`).join('');
+      selOp2.innerHTML = '<option value="">-- Sem Dupla --</option>' + operadores.map(o => `<option value="${o}">${o}</option>`).join('');
+    }
+
+    function salvarApontamento(e) {
+      e.preventDefault();
+      const novo = {
+        id: Date.now(),
+        data: new Date().toISOString(),
+        maquina: document.getElementById('apt-maquina').value,
+        op1: document.getElementById('apt-op1').value,
+        op2: document.getElementById('apt-op2').value,
+        produto: document.getElementById('apt-produto').value,
+        qtd: parseInt(document.getElementById('apt-qtd').value),
+        refugo: parseInt(document.getElementById('apt-refugo').value),
+        turno: document.getElementById('apt-turno').value
+      };
+      apontamentos.push(novo);
+      localStorage.setItem('maju_apontamentos', JSON.stringify(apontamentos));
+      document.getElementById('apt-produto').value = '';
+      document.getElementById('apt-qtd').value = '';
+      document.getElementById('apt-refugo').value = '0';
+      renderApontamentosHoje();
+      alert('Apontamento registrado com sucesso!');
+    }
+
+    function renderApontamentosHoje() {
+      const hojeStr = new Date().toISOString().slice(0,10);
+      const doHoje = apontamentos.filter(a => a.data.startsWith(hojeStr));
+      const tbody = document.getElementById('tb-hoje');
+      
+      if(doHoje.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum apontamento realizado hoje.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = doHoje.map(a => `
+        <tr>
+          <td class="p-2 md:p-3 text-slate-500">${new Date(a.data).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</td>
+          <td class="p-2 md:p-3 font-semibold">${a.maquina}</td>
+          <td class="p-2 md:p-3">${a.op1} ${a.op2 ? '/ ' + a.op2 : ''}</td>
+          <td class="p-2 md:p-3">${a.produto}</td>
+          <td class="p-2 md:p-3 text-center font-bold text-indigo-700">${a.qtd}</td>
+          <td class="p-2 md:p-3 text-center font-bold text-red-600">${a.refugo}</td>
+        </tr>
+      `).join('');
+    }
+
+    function filtrarRelatorio() {
+      const tipo = document.getElementById('rel-tipo').value;
+      const agora = new Date();
+      let dataCorte = new Date();
+
+      if(tipo === 'diario') {
+        dataCorte.setHours(0,0,0,0);
+        document.getElementById('lbl-periodo').innerText = `Período: Hoje (${agora.toLocaleDateString('pt-BR')})`;
+      } else if(tipo === 'semanal') {
+        dataCorte.setDate(agora.getDate() - 7);
+        document.getElementById('lbl-periodo').innerText = `Período: Últimos 7 dias (${dataCorte.toLocaleDateString('pt-BR')} até ${agora.toLocaleDateString('pt-BR')})`;
+      } else if(tipo === 'mensal') {
+        dataCorte.setDate(agora.getDate() - 30);
+        document.getElementById('lbl-periodo').innerText = `Período: Últimos 30 dias (${dataCorte.toLocaleDateString('pt-BR')} até ${agora.toLocaleDateString('pt-BR')})`;
+      }
+
+      const filtrados = apontamentos.filter(a => new Date(a.data) >= dataCorte);
+
+      let totQtd = 0, totRef = 0;
+      filtrados.forEach(f => { totQtd += f.qtd; totRef += f.refugo; });
+
+      document.getElementById('card-total').innerText = totQtd;
+      document.getElementById('card-refugo').innerText = totRef;
+      const totalGeral = totQtd + totRef;
+      const ef = totalGeral > 0 ? ((totQtd / totalGeral) * 100).toFixed(1) : 100;
+      document.getElementById('card-eficiencia').innerText = `${ef}%`;
+
+      const tbody = document.getElementById('tb-relatorio');
+      if(filtrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum registro encontrado para este período.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtrados.map(a => `
+        <tr>
+          <td class="p-2 md:p-3 text-xs text-slate-500 border-r">${new Date(a.data).toLocaleDateString('pt-BR')} ${new Date(a.data).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</td>
+          <td class="p-2 md:p-3 font-semibold border-r">${a.maquina}</td>
+          <td class="p-2 md:p-3 border-r">${a.op1} ${a.op2 ? '/ ' + a.op2 : ''}</td>
+          <td class="p-2 md:p-3 border-r">${a.produto}</td>
+          <td class="p-2 md:p-3 text-center font-bold text-indigo-700 border-r">${a.qtd}</td>
+          <td class="p-2 md:p-3 text-center font-bold text-red-600">${a.refugo}</td>
+        </tr>
+      `).join('');
+    }
+
+    function imprimirRelatorio() {
+      window.print();
+    }
+
+    function enviarWhatsApp() {
+      const periodo = document.getElementById('lbl-periodo').innerText;
+      const totQtd = document.getElementById('card-total').innerText;
+      const totRef = document.getElementById('card-refugo').innerText;
+      const ef = document.getElementById('card-eficiencia').innerText;
+
+      let msg = `*MAJU ENXOVAIS - Relatório de Produção*\n`;
+      msg += `📌 *${periodo}*\n\n`;
+      msg += `✅ *Total Produzido:* ${totQtd} peças\n`;
+      msg += `❌ *Total Refugos:* ${totRef} peças\n`;
+      msg += `📊 *Eficiência:* ${ef}\n`;
+
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    // --- GERENCIAMENTO DE CADASTROS (OPERADORES & MÁQUINAS) ---
+
+    function addOperador(e) {
+      e.preventDefault();
+      const input = document.getElementById('cad-op-nome');
+      const nome = input.value.trim();
+      if(nome) {
+        operadores.push(nome);
+        localStorage.setItem('maju_operadores', JSON.stringify(operadores));
+        input.value = '';
+        carregarSelects();
+        renderCadastros();
+      }
+    }
+
+    function editarOperador(index) {
+      const novoNome = prompt('Editar nome do funcionário:', operadores[index]);
+      if (novoNome !== null && novoNome.trim() !== '') {
+        operadores[index] = novoNome.trim();
+        localStorage.setItem('maju_operadores', JSON.stringify(operadores));
+        carregarSelects();
+        renderCadastros();
+      }
+    }
+
+    function deletarOperador(index) {
+      if (confirm(`Deseja remover o funcionário "${operadores[index]}"?`)) {
+        operadores.splice(index, 1);
+        localStorage.setItem('maju_operadores', JSON.stringify(operadores));
+        carregarSelects();
+        renderCadastros();
+      }
+    }
+
+    function addMaquina(e) {
+      e.preventDefault();
+      const input = document.getElementById('cad-maq-nome');
+      const nome = input.value.trim();
+      if(nome) {
+        maquinas.push(nome);
+        localStorage.setItem('maju_maquinas', JSON.stringify(maquinas));
+        input.value = '';
+        carregarSelects();
+        renderCadastros();
+      }
+    }
+
+    function editarMaquina(index) {
+      const novoNome = prompt('Editar nome da máquina/setor:', maquinas[index]);
+      if (novoNome !== null && novoNome.trim() !== '') {
+        maquinas[index] = novoNome.trim();
+        localStorage.setItem('maju_maquinas', JSON.stringify(maquinas));
+        carregarSelects();
+        renderCadastros();
+      }
+    }
+
+    function deletarMaquina(index) {
+      if (confirm(`Deseja remover a máquina "${maquinas[index]}"?`)) {
+        maquinas.splice(index, 1);
+        localStorage.setItem('maju_maquinas', JSON.stringify(maquinas));
+        carregarSelects();
+        renderCadastros();
+      }
+    }
+
+    function renderCadastros() {
+      // Renderizar Lista de Operadores
+      document.getElementById('lista-operadores').innerHTML = operadores.map((o, idx) => `
+        <li class="py-2 flex justify-between items-center border-b last:border-0">
+          <span class="font-medium text-slate-700">${o}</span>
+          <div class="flex space-x-1">
+            <button onclick="editarOperador(${idx})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            <button onclick="deletarOperador(${idx})" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </li>
+      `).join('');
+
+      // Renderizar Lista de Máquinas
+      document.getElementById('lista-maquinas').innerHTML = maquinas.map((m, idx) => `
+        <li class="py-2 flex justify-between items-center border-b last:border-0">
+          <span class="font-medium text-slate-700">${m}</span>
+          <div class="flex space-x-1">
+            <button onclick="editarMaquina(${idx})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            <button onclick="deletarMaquina(${idx})" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </li>
+      `).join('');
+
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
